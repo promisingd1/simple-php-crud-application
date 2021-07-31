@@ -3,12 +3,23 @@
 
     $info = '';
 
+//    Setting default task as report.
     $task = $_GET['task'] ?? 'report';
 
     if ( 'seed' == $task ) {
         seed(DB_NAME);
         $info = 'Seed is successful';
     }
+
+//    Retrieving data from input fields and generating report
+	if ( isset( $_POST['submit'] ) ) {
+		$firstName = filter_input( INPUT_POST, 'fname', FILTER_SANITIZE_STRING );
+		$lastName  = filter_input( INPUT_POST, 'lname', FILTER_SANITIZE_STRING );
+		$roll      = filter_input( INPUT_POST, 'roll', FILTER_SANITIZE_STRING );
+		if ( $firstName != '' && $lastName != '' && $roll != '' ) {
+			addNewStudent( $firstName, $lastName, $roll );
+		}
+	}
 ?>
 <!doctype html>
 <html lang="en">
@@ -47,6 +58,29 @@
 		<?php
 		endif;
 	?>
+    <?php if ('add' == $task) :
+        ?>
+        <div class="row">
+            <div class="col offset-md-2">
+                <form action="./index.php?task=report" method="post">
+                    <div class="mb-3">
+                        <label for="fname" class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="fname" name="fname" aria-describedby="firstName">
+                    </div>
+                    <div class="mb-3">
+                        <label for="lname" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="lname" name="lname" aria-describedby="lastName">
+                    </div>
+                    <div class="mb-3">
+                        <label for="roll" class="form-label">Roll</label>
+                        <input type="number" class="form-control" id="roll" name="roll" aria-describedby="roll">
+                    </div>
+                    <button type="submit" class="btn btn-primary" name="submit">Save</button>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
+
 </div>
 </body>
 </html>
