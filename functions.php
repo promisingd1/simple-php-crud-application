@@ -97,7 +97,7 @@
 							<?php printf( "%s", $student['roll'] ); ?>
                         </td>
                         <td>
-							<?php printf( "<a href='./index.php?task=edit&id=%s' class='text-decoration-none'>Edit | </a> <a href='./index.php?task=delete&id=%s' class='text-decoration-none'> Delete</a>", $student['id'], $student['id'] ); ?>
+							<?php printf( "<a href='./index.php?task=edit&id=%s' class='text-decoration-none'>Edit | </a> <a href='./index.php?task=delete&id=%s' class='text-decoration-none delete'> Delete</a>", $student['id'], $student['id'] ); ?>
                         </td>
                     </tr>
 					<?php
@@ -108,14 +108,10 @@
 
 	}
 
-	/*
-	 * Retrieving data from input fields
-	 *
-	 * */
-	function addNewStudent( $firstName, $lastName, $roll ) {
+	function addNewStudent( $firstName, $lastName, $roll ): bool {
 		$serializedData = file_get_contents( DB_NAME );
 		$students       = unserialize( $serializedData );
-		$newId          = count( $students ) + 1;
+		$newId          = getNewId($students);
 
 //		Validating whether same roll exists in the database
 		$found = false;
@@ -136,5 +132,72 @@
 			array_push( $students, $student );
 			$serializedData = serialize( $students );
 			file_put_contents( DB_NAME, $serializedData, LOCK_EX );
+			return true;
 		}
+
+		return false;
 	}
+
+	function getNewId($students) {
+		return max(array_column($students, 'id')) + 1;
+    }
+
+	function getStudent( $id ) {
+		$serializedData = file_get_contents( DB_NAME );
+		$students       = unserialize( $serializedData );
+
+		foreach ( $students as $student ){
+		    if ( $student['id'] == $id ) {
+		        return $student;
+            }
+        }
+
+        return  false;
+	}
+
+	function updateExistingStudent( $id, $firstName, $lastName, $roll ): bool {
+		$serializedData = file_get_contents( DB_NAME );
+		$students       = unserialize( $serializedData );
+
+//		Validating whether same roll exists in the database and comparing the roll with id of other students
+		$found = false;
+		foreach ($students as $_student) {
+			if ( $_student['roll'] == $roll && $_student['id'] != $id ) {
+				$found  = true;
+				break;
+			}
+		}
+
+		if ( !$found ) {
+			$students[$id -1]['firstName'] = $firstName;
+			$students[$id -1]['lastName'] = $lastName;
+			$students[$id -1]['roll'] = (string) $roll;
+
+			$serializedData = serialize( $students );
+			file_put_contents( DB_NAME, $serializedData, LOCK_EX );
+			return true;
+        }
+
+		return  false;
+	}
+
+	function printStudentArray() {
+		$serializedData = file_get_contents( DB_NAME );
+		$students       = unserialize( $serializedData );
+		print_r($students);
+    }
+
+    function deleteStudent($id) {
+	    $serializedData = file_get_contents( DB_NAME );
+	    $students       = unserialize( $serializedData );
+
+	    foreach ($students as $offset=>$student) {
+	        if ($student['id'] === $id ) {
+	            unset($students[$offset]);
+            }
+	    }
+
+	    unset($students[$id -1]);
+	    $serializedData = serialize( $students );
+	    file_put_contents( DB_NAME, $serializedData, LOCK_EX );
+    }
